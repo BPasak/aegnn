@@ -20,11 +20,11 @@ def __graph_initialization(module: Linear, x: torch.Tensor) -> torch.Tensor:
 
 def __graph_processing(module: Linear, x: torch.Tensor) -> torch.Tensor:
     diff_idx = torch.nonzero(x - module.asy_graph.x).t().detach().cpu().numpy()  # numpy for indexing
-    x_diff = x[diff_idx] - module.asy_graph.x[diff_idx]
+    x_diff = x[:, diff_idx[1, :]] - module.asy_graph.x[:, diff_idx[1, :]]
     y_residual = torch.mul(module.weight[:, diff_idx[1, :]], x_diff).t()
 
     # Update the graph with the new values (only there where it has changed).
-    module.asy_graph.x[diff_idx] = x[diff_idx]
+    module.asy_graph.x[:, diff_idx[1, :]] = x[:, diff_idx[1, :]]
     if diff_idx.size > 0:
         module.asy_graph.y[diff_idx[0, :], :] += y_residual
 

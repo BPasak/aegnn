@@ -47,7 +47,7 @@ def create_and_run_model(dm, num_events: int, index: int, device: torch.device, 
     sample.pos = sample.pos[:, :2]
     events_initial = sample_initial_data(sample, num_events, args.radius, edge_attr, args.max_num_neighbors)
 
-    index_new = min(num_events, sample.num_nodes - 1)
+    index_new = min(num_events, sample.num_nodes - 1) # I think there should be +1 here, although it shouldn't change the result.
     x_new = sample.x[index_new, :].view(1, -1)
     pos_new = sample.pos[index_new, :2].view(1, -1)
     event_new = Data(x=x_new, pos=pos_new, batch=torch.zeros(1, dtype=torch.long))
@@ -95,7 +95,7 @@ def get_log_values(model, attr: str, log_key: str, **log_dict):
 ##################################################################################################
 def run_experiments(dm, args, experiments: List[int], num_trials: int, device: torch.device, **model_kwargs
                     ) -> pd.DataFrame:
-    results_df = pd.DataFrame()
+    results_df = None
     output_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "aegnn_results", "flops.pkl")
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
@@ -106,7 +106,10 @@ def run_experiments(dm, args, experiments: List[int], num_trials: int, device: t
         # Get the logged flops and timings, both layer-wise and in total.
         results_flops = get_log_values(model, attr="asy_flops_log", log_key="flops", num_events=num_events)
         results_runtime = get_log_values(model, attr="asy_runtime_log", log_key="runtime", num_events=num_events)
-        results_df = results_df.append(results_flops + results_runtime, ignore_index=True)
+        if results_df is None:
+            results_df = pd.DataFrame(pd.Series(results_flops + results_runtime)).T
+        else:
+            results_df = pd.concat([results_df, pd.DataFrame(pd.Series(results_flops + results_runtime)).T])
         results_df.to_pickle(output_file)
 
         # Fully reset run to ensure independence between subsequent experiments.

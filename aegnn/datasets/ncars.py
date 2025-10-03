@@ -33,7 +33,7 @@ class NCars(NCaltech101):
     @staticmethod
     def load(raw_file: str) -> Data:
         events_file = os.path.join(raw_file, "events.txt")
-        events = torch.from_numpy(np.loadtxt(events_file)).float().cuda()
+        events = torch.from_numpy(np.loadtxt(events_file)).float()
         x, pos = events[:, -1:], events[:, :3]
         return Data(x=x, pos=pos)
 
